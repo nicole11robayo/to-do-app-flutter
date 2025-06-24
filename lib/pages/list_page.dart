@@ -27,13 +27,14 @@ class ListPage extends StatelessWidget {
       //body: TextButton(onPressed:() => context.push('/form'), child: Text('New')),
 
       body: 
-        ListView.builder(
+        ReorderableListView.builder(
           itemCount: tasks.length,
           itemBuilder: (context, index){
             final task = tasks[index];
             return ListTile(
+              key: ValueKey(task.id),
               title: Text(task.title, style: TextStyle(decoration: task.completed ? TextDecoration.lineThrough : TextDecoration.none),),
-              leading: Checkbox(value: task.completed, onChanged: (_) => taskProvider.statusTask(task.id)),
+              leading: Checkbox(value: task.completed, onChanged: (_) { taskProvider.statusTask(task.id); }),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -52,11 +53,16 @@ class ListPage extends StatelessWidget {
                             icon: Icon(Icons.delete), label: Text ('Delete') ),
                         ],
                       ))
-                  , icon: Icon(Icons.delete_forever_rounded))
+                  , icon: Icon(Icons.delete_forever_rounded)),
+                  Icon(Icons.drag_indicator_rounded)
                 ],
               ),
             );
-          }),
+          },
+          onReorder: (oldIndex, newIndex) {
+            taskProvider.reorderTasks(oldIndex, newIndex);
+          },
+          ),
 
           floatingActionButton: FloatingActionButton(
             onPressed: () => context.push('/form'),

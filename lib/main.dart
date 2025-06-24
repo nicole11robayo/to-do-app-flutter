@@ -43,6 +43,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       routerConfig: _router,
       title: 'To_Do App',
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
       themeMode: themeProvider.theme,
     );
   }
@@ -64,7 +66,7 @@ class TaskProvider extends ChangeNotifier{
   final List<Task> tasks = [];
 
   void addTask(Task task){
-    tasks.add(task);
+    tasks.insert(0,task);
     notifyListeners();
   }
 
@@ -83,6 +85,14 @@ class TaskProvider extends ChangeNotifier{
   void statusTask(String id){
     final index= tasks.indexWhere((item) => item.id == id);
     tasks[index] = Task(id: tasks[index].id, title: tasks[index].title, completed: !tasks[index].completed);
+
+    final task = tasks.removeAt(index);
+    if(task.completed == true){      
+      tasks.add(task);
+    }else{
+      tasks.insert(0, task);
+    }
+
     notifyListeners();
   }
 
@@ -90,6 +100,24 @@ class TaskProvider extends ChangeNotifier{
     final index= tasks.indexWhere((item) => item.id == id);
 
     return tasks[index];
+  }
+
+  void reorderTasks(int oldIndex, int newIndex){
+    if( oldIndex < newIndex){
+      newIndex -= 1;
+    }
+    final task = tasks.removeAt(oldIndex);
+    tasks.insert(newIndex, task);
+    notifyListeners();
+  }
+
+  void completedTask(String id, bool completed){
+    final index= tasks.indexWhere((item) => item.id == id);
+    if(completed == true){
+      final task = tasks.removeAt(index);
+      tasks.add(task);
+    }
+    notifyListeners();
   }
 }
 
