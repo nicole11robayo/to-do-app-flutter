@@ -1,8 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'pages/form_page.dart';
 import 'pages/list_page.dart';
+import 'package:dio/dio.dart';
 
 void main() {
   runApp(
@@ -60,10 +62,28 @@ class Task {
     required this.title,
     this.completed = false,
   });
+
+  factory Task.fromJson(Map<String, dynamic> json) => Task(
+        id: json["id"].toString(),
+        title: json["title"],
+        completed: json["completed"],
+    );
 }
 
 class TaskProvider extends ChangeNotifier{
   final List<Task> tasks = [];
+
+  void tasksApi() async{
+    final dio = Dio();
+    final response =  await dio.get('https://jsonplaceholder.typicode.com/todos');
+    final todosApi = response.data as List;
+
+    todosApi.take(5).forEach((item){
+      final task= Task.fromJson(item);
+      tasks.add(task);
+    });
+    notifyListeners();    
+  }
 
   void addTask(Task task){
     tasks.insert(0,task);

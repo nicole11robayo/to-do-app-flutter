@@ -4,8 +4,22 @@ import 'package:provider/provider.dart';
 
 import '../main.dart';
 
-class ListPage extends StatelessWidget { 
+class ListPage extends StatefulWidget { 
   const ListPage({super.key});
+
+  @override
+  State<ListPage> createState() => _ListPageState();
+}
+
+class _ListPageState extends State<ListPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    final taskProvider = context.read<TaskProvider>();
+    taskProvider.tasksApi();
+  }
+
 
   @override
   Widget build(BuildContext context) {
