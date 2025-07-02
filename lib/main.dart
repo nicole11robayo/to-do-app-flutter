@@ -1,39 +1,31 @@
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'pages/form_page.dart';
-import 'pages/list_page.dart';
-import 'package:dio/dio.dart';
+import './providers/task_provider.dart';
+import './providers/theme_provider.dart';
+import './router.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+
+import 'package:flutter_localizations/flutter_localizations.dart';
+import './l10n/app_localizations.dart';
+import './providers/locale_provider.dart';
+
+void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   runApp(
     MultiProvider(
       providers:[
         ChangeNotifierProvider(create: (_) => TaskProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider())
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: const MyApp(),)
   );
 }
-
-final GoRouter _router = GoRouter(
-  routes:[
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const ListPage()
-    ),
-    GoRoute(
-      path: '/form',
-      builder: (context, state) => const FormPage()
-    ),
-    GoRoute(
-      path: '/form/:id',
-      builder: (context, state){
-        final id = state.pathParameters['id'];
-        return FormPage(id: id,);
-      }),
-  ]);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -41,116 +33,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final localeProvider = context.watch<LocaleProvider>();
 
     return MaterialApp.router(
-      routerConfig: _router,
+      routerConfig: router,
       title: 'To_Do App',
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
       themeMode: themeProvider.theme,
+      locale: localeProvider.locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }
 
-class Task {
-  final String id;
-  final String title;
-  final bool completed;
-
-  Task ({
-    required this.id,
-    required this.title,
-    this.completed = false,
-  });
-
-  factory Task.fromJson(Map<String, dynamic> json) => Task(
-        id: json["id"].toString(),
-        title: json["title"],
-        completed: json["completed"],
-    );
-}
-
-class TaskProvider extends ChangeNotifier{
-  final List<Task> tasks = [];
-
-  void tasksApi() async{
-    final dio = Dio();
-    final response =  await dio.get('https://jsonplaceholder.typicode.com/todos');
-    final todosApi = response.data as List;
-
-    todosApi.take(5).forEach((item){
-      final task= Task.fromJson(item);
-      tasks.add(task);
-    });
-    notifyListeners();    
-  }
-
-  void addTask(Task task){
-    tasks.insert(0,task);
-    notifyListeners();
-  }
-
-  void deleteTask(String id){
-    tasks.removeWhere((item) => item.id == id);
-    notifyListeners();
-  }
-
-  void updateTask (String id, String newTitle){
-
-    final index= tasks.indexWhere((item) => item.id == id);
-    tasks[index] = Task(id: tasks[index].id, title: newTitle, completed: tasks[index].completed);
-    notifyListeners();
-  }
-
-  void statusTask(String id){
-    final index= tasks.indexWhere((item) => item.id == id);
-    tasks[index] = Task(id: tasks[index].id, title: tasks[index].title, completed: !tasks[index].completed);
-
-    final task = tasks.removeAt(index);
-    if(task.completed == true){      
-      tasks.add(task);
-    }else{
-      tasks.insert(0, task);
-    }
-
-    notifyListeners();
-  }
-
-  Task getTask(String id){
-    final index= tasks.indexWhere((item) => item.id == id);
-
-    return tasks[index];
-  }
-
-  void reorderTasks(int oldIndex, int newIndex){
-    if( oldIndex < newIndex){
-      newIndex -= 1;
-    }
-    final task = tasks.removeAt(oldIndex);
-    tasks.insert(newIndex, task);
-    notifyListeners();
-  }
-
-  void completedTask(String id, bool completed){
-    final index= tasks.indexWhere((item) => item.id == id);
-    if(completed == true){
-      final task = tasks.removeAt(index);
-      tasks.add(task);
-    }
-    notifyListeners();
-  }
-}
+//comand firebase analytics: adb shell setprop debug.firebase.analytics.app com.example.app_to_do
 
 
-class ThemeProvider extends ChangeNotifier{
-  ThemeMode theme= ThemeMode.light;
 
-  ThemeMode actualTheme(){
-    return theme;
-  }
 
-  void changeTheme(){
-    theme = (theme == ThemeMode.light) ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners();
-  }
-}

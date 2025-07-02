@@ -1,0 +1,11 @@
+{
+  "@@locale": "es",
+  "title": "Mis Tareas",
+  "new_task": "Nueva tarea",
+  "edit_task": "Editar tarea",
+  "add": "Agregar",
+  "update": "Actualizar",
+  "delete_task": "¿Eliminar tarea?",
+  "cancel": "Cancelar",
+  "delete": "Eliminar"
+}

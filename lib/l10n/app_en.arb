@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "title": "My Tasks",
+  "new_task": "New Task",
+  "edit_task": "Edit Task",
+  "add": "Add",
+  "update": "Update",
+  "delete_task": "Delete task?",
+  "cancel": "Cancel",
+  "delete": "Delete"
+}
