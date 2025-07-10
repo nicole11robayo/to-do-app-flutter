@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TaskTile extends StatelessWidget {
+
+class TaskTile extends ConsumerWidget {
   final Task task;
   const TaskTile({super.key, required this.task});
 
   @override
-  Widget build(BuildContext context) {
-    final taskProvider = context.read<TaskProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(taskProvider.notifier);
 
     return ListTile(
       title: Text(
@@ -28,7 +29,7 @@ class TaskTile extends StatelessWidget {
       leading: Checkbox(
         value: task.completed,
         onChanged: (_) {
-          taskProvider.changeTaskStatus(task.id);
+          notifier.changeTaskStatus(task.id);
 
           FirebaseAnalytics.instance.logEvent(
             name: 'task_status_changed',
@@ -60,7 +61,8 @@ class TaskTile extends StatelessWidget {
                   ),
                   TextButton.icon(
                     onPressed: () {
-                      taskProvider.deleteTask(task.id);
+                      //print('id task delete ${task.id}');
+                      notifier.deleteTask(task.id);
                       Navigator.pop(context);
 
                       FirebaseAnalytics.instance.logEvent(
@@ -69,6 +71,7 @@ class TaskTile extends StatelessWidget {
                           'task_title_deleted': task.title,
                         }
                       );
+                      print('event sent');
                     },
                     icon: Icon(Icons.delete),
                     label: Text(AppLocalizations.of(context)!.delete),

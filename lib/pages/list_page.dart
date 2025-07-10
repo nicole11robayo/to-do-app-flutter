@@ -2,23 +2,24 @@ import 'package:app_to_do/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+
 import '../providers/locale_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/task_tile.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 
-import '../main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ListPage extends StatefulWidget { 
+
+class ListPage extends ConsumerStatefulWidget{ 
   const ListPage({super.key});
 
   @override
-  State<ListPage> createState() => _ListPageState();
+  ConsumerState<ListPage> createState() => _ListPageState();
 }
 
-class _ListPageState extends State<ListPage> {
+class _ListPageState extends ConsumerState<ListPage> {
 
   @override
   void initState() {
@@ -30,14 +31,13 @@ class _ListPageState extends State<ListPage> {
     );
     
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      final taskProvider = context.read<TaskProvider>();
-      await taskProvider.fetchTasks();
+      await ref.read(taskProvider.notifier).fetchTasks();
 
       FirebaseAnalytics.instance.logEvent(
       name: 'tasks_fetched_api',
       parameters: {
         'message': 'Tasks form API fetched successfully',
-        'task_length_api':  taskProvider.tasks.length},
+      },
     );
     });
   }
@@ -45,15 +45,15 @@ class _ListPageState extends State<ListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = context.watch<TaskProvider>();
-    final tasks = taskProvider.tasks;
+    final tasks = ref.watch(taskProvider);
+    final locale = ref.watch(localeProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.title),
         actions: [          
           DropdownButton<Locale>(
-            value: context.watch<LocaleProvider>().locale,
+            value: locale,
             icon: const Icon(Icons.language, color: Colors.blue),
             items: const [
               DropdownMenuItem(
@@ -67,14 +67,14 @@ class _ListPageState extends State<ListPage> {
             ],
             onChanged: (Locale? newLocale) {
               if (newLocale != null) {
-                context.read<LocaleProvider>().setLocale(newLocale);
+                ref.read(localeProvider.notifier).setLocale(newLocale);
               }
             },
           ),
           IconButton(
             icon: const Icon(Icons.brightness_6),
             onPressed: () {
-              context.read<ThemeProvider>().changeTheme();              
+              ref.read(themeProvider.notifier).changeTheme();              
             },
           ),         
         ],        
@@ -92,7 +92,7 @@ class _ListPageState extends State<ListPage> {
             
           },
           onReorder: (oldIndex, newIndex) {
-            taskProvider.reorderTasks(oldIndex, newIndex);
+            ref.read(taskProvider.notifier).reorderTasks(oldIndex, newIndex);
           },
           ),
 

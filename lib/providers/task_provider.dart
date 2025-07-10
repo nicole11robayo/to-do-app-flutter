@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+
 import 'package:dio/dio.dart';
 import '../models/task.dart';
 
-class TaskProvider extends ChangeNotifier{
-  final List<Task> tasks = [];
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class TaskProvider extends StateNotifier<List<Task>>{
+  TaskProvider(): super([]);
 
   Future<void> fetchTasks() async{ 
 
@@ -22,66 +24,86 @@ class TaskProvider extends ChangeNotifier{
 
       final List<Task> loadedTasks = todosApi.take(5).map((item) => Task.fromJson(item)).toList();
 
-      tasks.addAll(loadedTasks);
-      notifyListeners();
-        
-      } catch (e) {
-        print('error fetching tasks: $e');      
+      state = [...state, ...loadedTasks];  
+      // ignore: empty_catches
+      } catch (e) { 
       }
   }
 
   void addTask(Task task){
-    tasks.insert(0,task);
-    notifyListeners();
+    state = [task, ...state];
   }
 
   void deleteTask(String id){
-    tasks.removeWhere((item) => item.id == id);
-    notifyListeners();
+    final newState= state.where((task) => task.id != id).toList();
+    state= newState;
+    
   }
 
   void updateTask (String id, String newTitle){
 
-    final index= tasks.indexWhere((item) => item.id == id);
-    tasks[index] = Task(id: tasks[index].id, title: newTitle, completed: tasks[index].completed);
-    notifyListeners();
+    state = [
+      for (final task in state)
+        if (task.id == id)
+          Task(id: task.id, title: newTitle, completed: task.completed)
+        else
+          task,
+    ];
   }
 
   void changeTaskStatus(String id){ 
-    final index= tasks.indexWhere((item) => item.id == id);
-    tasks[index] = Task(id: tasks[index].id, title: tasks[index].title, completed: !tasks[index].completed);
+    List<Task> updated = [
+      for (final task in state)
+        if (task.id == id)
+          Task(id: task.id, title: task.title, completed: !task.completed)
+        else
+          task,
+    ];
 
-    final task = tasks.removeAt(index);
-    if(task.completed == true){      
-      tasks.add(task);
-    }else{
-      tasks.insert(0, task);
+    final index = updated.indexWhere((t) => t.id == id);
+    final task = updated.removeAt(index);
+
+    if (task.completed) {
+      updated.add(task);
+    } else {
+      updated.insert(0, task);
     }
 
-    notifyListeners();
+    state = updated;
   }
 
   Task getTask(String id){
-    final index= tasks.indexWhere((item) => item.id == id);
-
-    return tasks[index];
+    return state.firstWhere((task) => task.id == id);
   }
 
   void reorderTasks(int oldIndex, int newIndex){
-    if( oldIndex < newIndex){
+    final updated = [...state];
+
+    if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final task = tasks.removeAt(oldIndex);
-    tasks.insert(newIndex, task);
-    notifyListeners();
+
+    final task = updated.removeAt(oldIndex);
+    updated.insert(newIndex, task);
+    state = updated;
   }
 
   void completedTask(String id, bool completed){
-    final index= tasks.indexWhere((item) => item.id == id);
-    if(completed == true){
-      final task = tasks.removeAt(index);
-      tasks.add(task);
+    final updated = [...state];
+
+    final index = updated.indexWhere((task) => task.id == id);
+    final task = updated.removeAt(index);
+
+    if (completed) {
+      updated.add(task);
+    } else {
+      updated.insert(0, task);
     }
-    notifyListeners();
+
+    state = updated;
   }
 }
+
+final taskProvider = StateNotifierProvider<TaskProvider, List<Task>>(
+  (ref) => TaskProvider(),
+);

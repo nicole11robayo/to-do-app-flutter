@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+
 import '../l10n/app_localizations.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
@@ -7,17 +7,18 @@ import 'package:go_router/go_router.dart';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
-class TaskForm extends StatefulWidget {
+class TaskForm extends ConsumerStatefulWidget {
   final String? id;
   const TaskForm({super.key, this.id});
 
   @override
-  State<TaskForm> createState() => _TaskFormState();
+  ConsumerState<TaskForm> createState() => _TaskFormState();
 }
 
-class _TaskFormState extends State<TaskForm> {
+class _TaskFormState extends ConsumerState<TaskForm> {
 
   final TextEditingController controller = TextEditingController();
   bool editingNow = false;
@@ -25,11 +26,10 @@ class _TaskFormState extends State<TaskForm> {
 
   @override
   void initState() {
-    final taskProvider = context.read<TaskProvider>();
     super.initState();
 
     if (widget.id != null){
-      final task = taskProvider.getTask(widget.id!);
+      final task = ref.read(taskProvider.notifier).getTask(widget.id!);
       controller.text= task.title;
       previousTitle= task.title;
       editingNow=true;
@@ -38,10 +38,10 @@ class _TaskFormState extends State<TaskForm> {
 
   void formTaskSubmit (){
     final title= controller.text;
-    final taskProvider = context.read<TaskProvider>();
+    final notifier = ref.read(taskProvider.notifier);
 
     if(editingNow){
-      taskProvider.updateTask(widget.id!, title);
+      notifier.updateTask(widget.id!, title);
 
       FirebaseAnalytics.instance.logEvent(
         name: 'task_updated',
@@ -53,7 +53,7 @@ class _TaskFormState extends State<TaskForm> {
         
     }else{
       final id= DateTime.now().millisecondsSinceEpoch.toString();
-      taskProvider.addTask(Task(id: id, title: title));
+      notifier.addTask(Task(id: id, title: title));
 
       FirebaseAnalytics.instance.logEvent(
         name: 'task_created',

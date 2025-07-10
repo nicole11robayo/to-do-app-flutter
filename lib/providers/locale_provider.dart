@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
-class LocaleProvider extends ChangeNotifier {
-  Locale _locale = const Locale('en');
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-  Locale get locale => _locale;
+class LocaleProvider extends StateNotifier<Locale> {
+  LocaleProvider(): super (const Locale('en'));
+
 
   void setLocale(Locale locale) {
     if (!['en', 'es'].contains(locale.languageCode)) return;
-    _locale = locale;
-    notifyListeners();
+    state = locale;
   }
 }
+
+final localeProvider = StateNotifierProvider<LocaleProvider, Locale>(
+  (ref) => LocaleProvider(),
+);

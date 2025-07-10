@@ -1,7 +1,8 @@
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import './providers/task_provider.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import './providers/theme_provider.dart';
 import './router.dart';
 
@@ -17,31 +18,27 @@ void main() async {
   await Firebase.initializeApp();
 
   runApp(
-    MultiProvider(
-      providers:[
-        ChangeNotifierProvider(create: (_) => TaskProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => LocaleProvider()),
-      ],
-      child: const MyApp(),)
-  );
+    ProviderScope(
+      child: MyApp(),
+    ),   
+  );      
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget{
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
-    final localeProvider = context.watch<LocaleProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       routerConfig: router,
       title: 'To_Do App',
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
-      themeMode: themeProvider.theme,
-      locale: localeProvider.locale,
+      themeMode: themeMode,
+      locale: locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
